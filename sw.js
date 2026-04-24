@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stockdash-v1';
+const CACHE_NAME = 'stockdash-v2'; // v1에서 v2로 캐시 버전 업그레이드
 const CACHE_URLS = [
   './stock_pwa.html',
   'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@400;500;600&display=swap'
@@ -21,8 +21,8 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // 주가 API는 항상 네트워크 우선
-  if (e.request.url.includes('yahoo') || e.request.url.includes('naver') || e.request.url.includes('gemini') || e.request.url.includes('duckbai')) {
+  // 주가 API 및 CDN은 항상 네트워크 우선
+  if (e.request.url.includes('yahoo') || e.request.url.includes('naver') || e.request.url.includes('gemini') || e.request.url.includes('duckbai') || e.request.url.includes('jsdelivr')) {
     e.respondWith(fetch(e.request).catch(() => new Response('offline', {status: 503})));
     return;
   }

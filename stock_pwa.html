@@ -809,8 +809,8 @@ function renderSentiment() {
   }).join('');
 }
 
-// 2. <script> 태그 내부의 renderStockCards 함수를 아래 내용으로 완전히 교체합니다.
-// 변경점: 최상단 div에 data-code 속성을 추가하고, 렌더링 직후 SortableJS를 초기화합니다.
+let krSortable = null;
+let usSortable = null;
 
 function renderStockCards() {
   const krStocks = stocks.filter(s => s.market === 'KR');
@@ -836,7 +836,6 @@ function renderStockCards() {
     const maTag = d ? `<span class="tag" style="color:${d.maSignal.label==='골든크로스'?'var(--red)':d.maSignal.label==='데드크로스'?'var(--blue)':d.maSignal.label==='정배열'?'var(--teal)':'var(--text3)'}">${d.maSignal.label}</span>` : '';
     const volTag = d && d.volRatio > 2 ? `<span class="tag tag-amber">${d.volRatio.toFixed(1)}x</span>` : '';
     
-    // 추가된 부분: data-code="${s.code}"
     return `<div class="stock-card" data-code="${s.code}" onclick="showDetail('${s.code}')">
       <div class="stock-card-header">
         <div>
@@ -877,7 +876,6 @@ function renderStockCards() {
       profitTag = `<span class="tag ${ret >= 0 ? 'tag-green' : 'tag-blue'}">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</span>`;
     }
     
-    // 추가된 부분: data-code="${s.code}"
     return `<div class="stock-card" data-code="${s.code}" onclick="showDetail('${s.code}')">
       <div class="stock-card-header">
         <div>
@@ -906,14 +904,13 @@ function renderStockCards() {
     ? usStocks.map(makeUsCard).join('')
     : '<div class="empty"><div class="empty-icon">📊</div>미국 종목을 추가해주세요</div>';
 
-  // 3. 렌더링 완료 후 Sortable 이벤트 바인딩
   initSortable();
 }
 
 function initSortable() {
   const options = {
     animation: 150,
-    delay: 200, // 모바일에서 스크롤과 겹치지 않도록 꾹 눌렀을 때만 드래그 시작
+    delay: 200,
     delayOnTouchOnly: true,
     onEnd: function () {
       const krNodes = Array.from(document.getElementById('kr-cards').querySelectorAll('.stock-card'));
@@ -928,16 +925,25 @@ function initSortable() {
       });
 
       stocks = newStocks;
-      save(); // 로컬 스토리지에 변경된 순서 저장
+      save();
     }
   };
 
   const krContainer = document.getElementById('kr-cards');
   const usContainer = document.getElementById('us-cards');
   
-  if (krContainer && krContainer.querySelector('.stock-card')) new Sortable(krContainer, options);
-  if (usContainer && usContainer.querySelector('.stock-card')) new Sortable(usContainer, options);
+  // 기존 인스턴스가 있다면 파괴하여 메모리 릭(무한 증식) 방지
+  if (krSortable) krSortable.destroy();
+  if (usSortable) usSortable.destroy();
+
+  if (krContainer && krContainer.querySelector('.stock-card')) {
+    krSortable = new Sortable(krContainer, options);
+  }
+  if (usContainer && usContainer.querySelector('.stock-card')) {
+    usSortable = new Sortable(usContainer, options);
+  }
 }
+
 function renderAlerts() {
   const makeAlertCard = (a) => {
     const ic = {buy:{cls:'aicon-buy',s:'↑'}, sell:{cls:'aicon-sell',s:'↓'}, warn:{cls:'aicon-warn',s:'!'}};
