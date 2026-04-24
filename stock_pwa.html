@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- iOS 스플래시 -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>StockDash</title>
+<title>StockDash v3.4</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -223,7 +223,7 @@ body{font-family:var(--font);color:var(--text);font-size:14px}
   <!-- Top Bar -->
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:8px">
-      <div class="logo">STOCK<span>.</span>DASH</div>
+      <div class="logo">STOCK<span>.</span>DASH <span style="font-size:9px;color:var(--text3)">v3.4</span></div>
       <div class="topbar-badges">
         <span class="sess-badge" id="kr-badge">KR --</span>
         <span class="sess-badge" id="us-badge">US --</span>
@@ -293,6 +293,28 @@ body{font-family:var(--font);color:var(--text);font-size:14px}
       <div id="alert-list-us"><div class="empty"><div class="empty-icon">🔔</div>신호 대기 중...</div></div>
     </div>
 
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <div class="section-header">⚙️ 설정</div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:10px">
+        <div class="card-title">데이터 내보내기 / 가져오기</div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:10px">종목 목록과 단가를 다른 기기로 이동하거나 백업할 수 있어요.</p>
+        <button class="btn btn-full" style="margin-bottom:8px" onclick="exportData()">📤 내보내기 (클립보드 복사)</button>
+        <button class="btn btn-full" onclick="openImport()">📥 가져오기 (붙여넣기)</button>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:10px">
+        <div class="card-title">앱 정보</div>
+        <div class="irow"><span class="ilabel">버전</span><span class="ival">v3.4 PWA</span></div>
+        <div class="irow"><span class="ilabel">저장 키</span><span class="ival">stocks_v3_4</span></div>
+        <div class="irow"><span class="ilabel">총 종목</span><span class="ival" id="s-total">0개</span></div>
+        <div class="irow"><span class="ilabel">실행 환경</span><span class="ival" id="pwa-status">확인 중...</span></div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px">
+        <div class="card-title">홈 화면 설치 안내</div>
+        <p style="font-size:11px;color:var(--text2)">Safari에서 열고 하단 공유버튼(□↑) → <b style="color:var(--accent)">홈 화면에 추가</b>를 탭하면 앱처럼 설치돼요.</p>
+      </div>
+    </div>
+
   </div><!-- /content -->
 
   <!-- Bottom Tab Bar -->
@@ -308,6 +330,9 @@ body{font-family:var(--font);color:var(--text);font-size:14px}
     </div>
     <div class="tab" id="tab-alerts" onclick="switchTab('alerts')">
       <div class="tab-icon">🔔</div><div class="tab-label">알림</div>
+    </div>
+    <div class="tab" id="tab-settings" onclick="switchTab('settings')">
+      <div class="tab-icon">⚙️</div><div class="tab-label">설정</div>
     </div>
   </div>
 </div>
@@ -421,7 +446,7 @@ body{font-family:var(--font);color:var(--text);font-size:14px}
 
 <script>
 // ── State ──
-let stocks = JSON.parse(localStorage.getItem('stocks_v3_2') || '[]');
+let stocks = JSON.parse(localStorage.getItem('stocks_v3_4') || '[]');
 let marketData = {};
 let marketSentiment = { kospi: null, spy: null };
 let alertLogKr = [];
@@ -440,7 +465,7 @@ if (!stocks.length) {
   save();
 }
 
-function save() { localStorage.setItem('stocks_v3_2', JSON.stringify(stocks)); }
+function save() { localStorage.setItem('stocks_v3_4', JSON.stringify(stocks)); }
 
 // ── Tab Navigation ──
 function switchTab(tab) {
@@ -755,7 +780,7 @@ function checkAlerts(s, d, score, signal) {
 }
 
 // ── Render ──
-function renderAll() { renderMetrics(); renderSentiment(); renderClock(); renderStockCards(); renderAlerts(); }
+function renderAll() { renderMetrics(); renderSentiment(); renderClock(); renderStockCards(); renderAlerts(); updateSettings(); }
 
 function renderMetrics() {
   const kr = stocks.filter(s => s.market === 'KR').length;
@@ -1044,6 +1069,33 @@ if (isIos && !isInStandaloneMode && !localStorage.getItem('pwa-banner-dismissed'
   setTimeout(() => document.body.appendChild(banner), 1500);
 }
 
+// ── Export / Import ──
+function exportData() {
+  const data = JSON.stringify(stocks);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(data).then(() => showToast('복사 완료', '다른 기기에서 가져오기로 붙여넣으세요', 'success'));
+  } else { prompt('아래 내용을 복사하세요:', data); }
+}
+function openImport() { document.getElementById('import-modal').classList.add('open'); }
+function importData() {
+  try {
+    const raw = document.getElementById('import-input').value.trim();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('배열 형식이 아닙니다');
+    stocks = parsed; save(); closeModal('import-modal');
+    document.getElementById('import-input').value = '';
+    showToast('완료', stocks.length + '개 종목을 불러왔습니다', 'success');
+    refreshAll();
+  } catch(e) { showToast('오류', '올바른 형식이 아닙니다: ' + e.message, 'error'); }
+}
+function updateSettings() {
+  if (document.getElementById('s-total')) {
+    document.getElementById('s-total').textContent = stocks.length + '개';
+    const isStandalone = ('standalone' in navigator) && navigator.standalone;
+    document.getElementById('pwa-status').textContent = isStandalone ? '✅ 홈 화면 앱' : '🌐 브라우저';
+  }
+}
+
 // ── Init ──
 renderClock();
 setInterval(renderClock, 30000);
@@ -1051,5 +1103,18 @@ renderAll();
 refreshAll();
 setInterval(() => refreshAll(), 5 * 60 * 1000);
 </script>
+
+<!-- ── Import Modal ── -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">데이터 가져오기</div><button class="mclose" onclick="closeModal('import-modal')">✕</button></div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px">내보내기로 복사한 데이터를 아래에 붙여넣기 하세요.</p>
+    <div class="frow"><textarea class="finput" id="import-input" rows="5" placeholder="[{...}]" style="font-size:12px;font-family:var(--mono);resize:none"></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" style="flex:1" onclick="closeModal('import-modal')">취소</button>
+      <button class="btn btn-p" style="flex:1" onclick="importData()">가져오기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
