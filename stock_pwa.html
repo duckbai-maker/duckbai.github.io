@@ -822,7 +822,7 @@ function renderStockCards() {
     const cc = !d ? 'neutral' : d.change >= 0 ? 'up' : 'down';
     const cs = !d ? '—' : (d.change >= 0 ? '+' : '') + d.change.toFixed(2) + '%';
     const scoreVal = d ? d.total : null;
-    const scoreClass = scoreVal === null ? '' : scoreVal >= 3 ? 'tag-green' : scoreVal <= -3 ? 'tag-blue' : 'tag';
+    const scoreClass = scoreVal === null ? '' : scoreVal >= 3 ? 'tag-red' : scoreVal <= -3 ? 'tag-blue' : 'tag';
     const scoreStr = scoreVal === null ? '' : (scoreVal > 0 ? '+' : '') + scoreVal;
     const sig = d ? d.signal : 'hold';
     const pc = {buy:'pill-buy', sell:'pill-sell', hold:'pill-hold'}[sig];
@@ -830,7 +830,7 @@ function renderStockCards() {
     let profitTag = '';
     if (d && s.cost) {
       const ret = ((d.price - s.cost) / s.cost) * 100;
-      const pc2 = ret >= 0 ? 'tag-green' : 'tag-blue';
+      const pc2 = ret >= 0 ? 'tag-red' : 'tag-blue';
       profitTag = `<span class="tag ${pc2}">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</span>`;
     }
     const maTag = d ? `<span class="tag" style="color:${d.maSignal.label==='골든크로스'?'var(--red)':d.maSignal.label==='데드크로스'?'var(--blue)':d.maSignal.label==='정배열'?'var(--teal)':'var(--text3)'}">${d.maSignal.label}</span>` : '';
@@ -873,7 +873,7 @@ function renderStockCards() {
     let profitTag = '';
     if (d && s.cost) {
       const ret = ((d.price - s.cost) / s.cost) * 100;
-      profitTag = `<span class="tag ${ret >= 0 ? 'tag-green' : 'tag-blue'}">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</span>`;
+      profitTag = `<span class="tag ${ret >= 0 ? 'tag-red' : 'tag-blue'}">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</span>`;
     }
     
     return `<div class="stock-card" data-code="${s.code}" onclick="showDetail('${s.code}')">
